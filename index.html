@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vue App</title>
+    <script src="https://unpkg.com/vue@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+  </head>
+
+  <body>
+    <div id="app">
+      <input
+        type="text"
+        id="urlInput"
+        v-model="url"
+        placeholder="Type endpoint"
+      /><br />
+      <button @click="fetching">Trigger API</button>
+      <h1 v-if="response">You got a response</h1>
+      <h1 v-else>Nothing to show</h1>
+      <h4 v-if="response">
+        Filter messages<span>
+          <select v-model="filter">
+            <option disabled value="">Sort options</option>
+            <option value="asc">Earlier</option>
+            <option value="desc">Recent</option>
+          </select></span
+        >
+      </h4>
+      <table v-if="response">
+        <thead>
+          <tr>
+            <th style="text-align: center; color: red">Author</th>
+            <th style="text-align: center; color: red">Subject</th>
+            <th style="text-align: center; color: red">Post On</th>
+            <th style="text-align: center; color: red">Post time</th>
+          </tr>
+        </thead>
+        <tbody style="align-items: center">
+          <tr v-for="item in sortedResponse" :key="item.id">
+            <td>{{ item.author.login }}</td>
+            <td style="text-align: center; color: rgb(29, 162, 42)">
+              {{ item.subject }}
+            </td>
+            <td>{{ item.conversation.last_post_time_friendly }}</td>
+            <td style="text-align: center; color: blue">
+              {{ item.post_time }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      const { ref, computed, reactive } = Vue;
+      const app = Vue.createApp({
+        setup() {
+          const url = ref("");
+          const response = ref(null);
+          const filter = reactive(ref(""));''
+
+          const fetching = async function () {
+            const res = await fetch(url.value);
+            const data = await res.json();
+            response.value = data;
+          };
+
+          const sortedResponse = computed(() => {
+            const items = [...response.value.data.items];
+            if (filter.value === "asc") {
+              return items
+                .slice()
+                .sort((a, b) => dayjs(a.post_time).diff(dayjs(b.post_time)));
+            } else if (filter.value === "desc") {
+              return items
+                .slice()
+                .sort((a, b) => dayjs(b.post_time).diff(dayjs(a.post_time)));
+            }
+            return items;
+          });
+
+          return {
+            url,
+            response,
+            fetching,
+            sortedResponse,
+            filter,
+          };
+        },
+      });
+
+      app.mount("#app");
+    </script>
+  </body>
+</html>
